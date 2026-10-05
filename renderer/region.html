@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Select area</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; cursor: crosshair; user-select: none; font-family: "Segoe UI", system-ui, sans-serif; }
+  #shade { position: fixed; inset: 0; background: rgba(0,0,0,.45); }
+  #box { position: fixed; display: none; border: 2px dashed #fff; box-shadow: 0 0 0 100vmax rgba(0,0,0,.45); }
+  #dim { position: fixed; right: 14px; bottom: 14px; padding: 3px 8px; border-radius: 6px; background: #fff; color: #09090b; font-size: 12px; font-weight: 600; }
+  #hint { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border-radius: 10px; background: rgba(15,15,20,.9); color: #ececf1; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="shade"></div>
+<div id="box"><div id="dim"></div></div>
+<div id="hint">Drag to select the area to record · Esc to cancel</div>
+<script>
+  const shade = document.getElementById('shade');
+  const box = document.getElementById('box');
+  const dim = document.getElementById('dim');
+  let start = null;
+  const rectOf = (e) => ({
+    x: Math.min(start.x, e.clientX), y: Math.min(start.y, e.clientY),
+    w: Math.abs(e.clientX - start.x), h: Math.abs(e.clientY - start.y),
+  });
+  addEventListener('mousedown', (e) => {
+    start = { x: e.clientX, y: e.clientY };
+    shade.style.display = 'none';
+    box.style.display = 'block';
+    document.getElementById('hint').style.display = 'none';
+  });
+  addEventListener('mousemove', (e) => {
+    if (!start) return;
+    const r = rectOf(e);
+    Object.assign(box.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+    dim.textContent = `${Math.round(r.w)} × ${Math.round(r.h)}`;
+  });
+  addEventListener('mouseup', (e) => {
+    if (!start) return;
+    const r = rectOf(e);
+    start = null;
+    if (r.w < 120 || r.h < 80) { box.style.display = 'none'; shade.style.display = 'block'; return; }
+    // even dimensions keep video encoders happy
+    api.send('region:result', { x: r.x, y: r.y, w: r.w - (r.w % 2), h: r.h - (r.h % 2) });
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') api.send('region:result', null); });
+</script>
+</body>
+</html>

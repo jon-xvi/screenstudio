@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenStudio</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="launcher.css">
+<script src="ui.js"></script>
+</head>
+<body>
+<header class="titlebar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>
+    <span class="t-h3">ScreenStudio</span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-record" aria-selected="true" aria-controls="view-record"><i data-icon="record"></i>Record</button>
+    <button role="tab" id="tab-recordings" aria-selected="false" aria-controls="view-recordings" tabindex="-1"><i data-icon="film"></i>Recordings</button>
+  </nav>
+  <div class="spacer"></div>
+  <button class="btn btn--tertiary btn--icon" id="themeBtn" data-tip="Toggle light / dark" aria-label="Toggle light or dark theme"><i data-icon="sun"></i></button>
+  <button class="btn btn--tertiary btn--icon" id="minBtn" data-tip="Minimize" aria-label="Minimize"><i data-icon="minus"></i></button>
+  <button class="btn btn--tertiary btn--icon" id="closeBtn" data-tip="Close" aria-label="Close"><i data-icon="x"></i></button>
+</header>
+
+<!-- RECORD -->
+<main id="view-record" role="tabpanel" aria-labelledby="tab-record" class="view record">
+  <section class="capture" aria-labelledby="h-capture">
+    <h1 class="t-h3" id="h-capture">What do you want to record?</h1>
+    <div class="modes" role="radiogroup" aria-label="Recording mode">
+      <button class="mode" role="radio" aria-checked="true" data-mode="screen">
+        <span class="mode__thumb wall" aria-hidden="true"><img class="shot" alt=""></span>
+        <span class="mode__label"><i data-icon="monitor"></i><span>Full screen</span><i data-icon="check" class="mode__check"></i></span>
+        <span class="t-caption subtle">Everything on one display</span>
+      </button>
+      <button class="mode" role="radio" aria-checked="false" data-mode="custom" tabindex="-1">
+        <span class="mode__thumb wall" aria-hidden="true">
+          <img class="shot dim" alt="">
+          <span class="area"><b></b><b></b><b></b><b></b></span>
+        </span>
+        <span class="mode__label"><i data-icon="crop"></i><span>Custom area</span><i data-icon="check" class="mode__check"></i></span>
+        <span class="t-caption subtle">Drag to choose a region</span>
+      </button>
+      <button class="mode" role="radio" aria-checked="false" data-mode="window" tabindex="-1">
+        <span class="mode__thumb wall" aria-hidden="true">
+          <img class="shot blur" alt="">
+          <span class="winframe"><span class="bar"><i></i><i></i><i></i></span><img class="winshot" alt=""></span>
+        </span>
+        <span class="mode__label"><i data-icon="window"></i><span>Window</span><i data-icon="check" class="mode__check"></i></span>
+        <span class="t-caption subtle">One app, whatever is on top</span>
+      </button>
+    </div>
+    <div id="alertSlot"></div>
+    <div class="startbar">
+      <div class="summary" aria-live="polite">
+        <h3 class="t-micro subtle">When you press Record</h3>
+        <ul id="summaryList"></ul>
+      </div>
+      <button class="btn btn--primary btn--lg start" id="startBtn"><i data-icon="record" data-fill></i>Start recording</button>
+    </div>
+  </section>
+
+  <aside class="inputs" aria-labelledby="h-inputs">
+    <h2 class="t-h3" id="h-inputs">Inputs</h2>
+    <div class="input-row" id="displayRow" hidden>
+      <span class="input-row__icon" aria-hidden="true"><i data-icon="monitor"></i></span>
+      <select class="select" id="displaySel" aria-label="Display"></select>
+    </div>
+    <div class="input-row">
+      <button class="btn btn--secondary btn--icon input-row__toggle" id="camTgl" aria-pressed="true" data-tip="Camera on / off" aria-label="Camera"><i data-icon="camera"></i></button>
+      <select class="select" id="camSel" aria-label="Camera device"></select>
+    </div>
+    <div class="input-row">
+      <button class="btn btn--secondary btn--icon input-row__toggle" id="micTgl" aria-pressed="true" data-tip="Microphone on / off" aria-label="Microphone"><i data-icon="mic"></i></button>
+      <select class="select" id="micSel" aria-label="Microphone device"></select>
+    </div>
+    <div class="input-row">
+      <button class="btn btn--secondary btn--icon input-row__toggle" id="sysTgl" aria-pressed="true" data-tip="System audio on / off" aria-label="System audio"><i data-icon="volume"></i></button>
+      <span class="input-row__text">System audio</span>
+    </div>
+
+    <p class="hint">While recording<br>Stop <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>R</kbd><br>Pause <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd></p>
+  </aside>
+</main>
+
+<!-- RECORDINGS -->
+<main id="view-recordings" role="tabpanel" aria-labelledby="tab-recordings" class="view recordings" hidden>
+  <div class="recordings__head">
+    <h1 class="t-h3">Recordings</h1>
+    <span class="t-caption subtle" id="recCount"></span>
+  </div>
+  <div id="recGrid" class="rec-grid"></div>
+  <div id="recEmpty" class="empty" hidden>
+    <div class="empty__icon"><i data-icon="film" data-class="icon--lg"></i></div>
+    <h2 class="t-h3">No recordings yet</h2>
+    <p class="muted">Record your first walkthrough, tutorial or product demo. It will appear here, ready to edit.</p>
+    <button class="btn btn--primary" id="emptyStart"><i data-icon="record" data-fill></i>Start recording</button>
+  </div>
+</main>
+
+<!-- PROCESSING -->
+<main id="view-processing" class="view processing" hidden aria-live="polite">
+  <div class="processing__card">
+    <h1 class="t-h2" id="procTitle">Processing your recording</h1>
+    <p class="muted" id="procSub">This only takes a moment. The editor opens automatically.</p>
+    <ol class="steps" id="steps"></ol>
+    <div class="progress" aria-hidden="true"><div class="progress__bar" id="procBar"></div></div>
+    <div id="procError" hidden>
+      <div class="alert alert--error"><i data-icon="alert"></i><span id="procErrorText"></span></div>
+      <button class="btn btn--secondary" id="procBack">Back to recorder</button>
+    </div>
+  </div>
+</main>
+
+<script src="launcher.js"></script>
+</body>
+</html>

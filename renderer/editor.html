@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenStudio Editor</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="editor.css">
+<script src="ui.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="appbar">
+    <button class="btn btn--tertiary btn--icon" id="homeBtn" data-tip="Open recorder" data-kbd="R" aria-label="Open recorder"><i data-icon="home"></i></button>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <span class="subtle">Recordings</span>
+      <i data-icon="chevron-right" data-class="subtle"></i>
+      <span class="t-label" id="projName" aria-current="page">Project</span>
+    </nav>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="btn btn--tertiary btn--icon" id="undoBtn" data-tip="Undo" data-kbd="Ctrl+Z" aria-label="Undo" disabled><i data-icon="undo"></i></button>
+    <button class="btn btn--tertiary btn--icon" id="redoBtn" data-tip="Redo" data-kbd="Ctrl+Shift+Z" aria-label="Redo" disabled><i data-icon="redo"></i></button>
+    <div class="spacer"></div>
+    <span class="t-caption subtle" id="saveState" role="status">Saved</span>
+    <button class="btn btn--tertiary btn--icon" id="folderBtn" data-tip="Show files" aria-label="Show project files"><i data-icon="folder"></i></button>
+    <button class="btn btn--tertiary btn--icon" id="themeBtn" data-tip="Toggle light / dark" aria-label="Toggle light or dark theme"><i data-icon="sun"></i></button>
+    <div class="split">
+      <button class="btn btn--primary" id="exportBtn"><i data-icon="export"></i>Export</button>
+      <button class="btn btn--primary" id="exportMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Export presets"><i data-icon="chevron-down"></i></button>
+      <div class="menu" id="exportMenu" role="menu" hidden></div>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <nav class="rail" id="rail" aria-label="Tools">
+      <button class="rail__btn" data-sel="project" aria-pressed="true" data-tip="Canvas — background, frame, size"><i data-icon="layout" data-class="icon--lg"></i><span>Canvas</span></button>
+      <button class="rail__btn" data-sel="zoom" aria-pressed="false" data-tip="Zoom — focus on what matters"><i data-icon="zoom-in" data-class="icon--lg"></i><span>Zoom</span></button>
+      <button class="rail__btn" data-sel="cursor" aria-pressed="false" data-tip="Cursor — highlight and click effects"><i data-icon="cursor" data-class="icon--lg"></i><span>Cursor</span></button>
+      <button class="rail__btn" data-sel="camera" aria-pressed="false" data-tip="Camera — layout and style"><i data-icon="camera" data-class="icon--lg"></i><span>Camera</span></button>
+    </nav>
+
+    <main class="center">
+      <section class="stage" aria-label="Canvas">
+        <div class="canvas-wrap" id="canvasWrap"><canvas id="view" width="1920" height="1080" aria-label="Video preview"></canvas></div>
+        <div class="canvas-controls" role="group" aria-label="Canvas view">
+          <button class="btn btn--tertiary btn--icon btn--sm" id="zoomOutBtn" data-tip="Zoom out" aria-label="Zoom out"><i data-icon="zoom-out"></i></button>
+          <span class="t-caption num" id="zoomLabel">Fit</span>
+          <button class="btn btn--tertiary btn--icon btn--sm" id="zoomInBtn" data-tip="Zoom in" aria-label="Zoom in"><i data-icon="zoom-in"></i></button>
+          <button class="btn btn--tertiary btn--icon btn--sm" id="fitBtn" data-tip="Fit to window" aria-label="Fit to window"><i data-icon="fit"></i></button>
+        </div>
+        <div class="stage__loading" id="loading"><span class="spinner"></span><span class="muted">Loading recording…</span></div>
+      </section>
+
+      <section class="transport" aria-label="Playback">
+        <button class="btn btn--primary btn--icon" id="playBtn" data-tip="Play" data-kbd="Space" aria-label="Play"><i data-icon="play" data-fill></i></button>
+        <span class="t-body num muted" id="time">0:00 / 0:00</span>
+        <div class="spacer"></div>
+        <div class="row" role="group" aria-label="Timeline tools">
+          <button class="btn btn--tertiary btn--icon" id="splitBtn" data-tip="Split zoom at playhead" data-kbd="S" aria-label="Split zoom at playhead" disabled><i data-icon="scissors"></i></button>
+          <button class="btn btn--tertiary btn--icon" id="dupBtn" data-tip="Duplicate" data-kbd="Ctrl+D" aria-label="Duplicate zoom" disabled><i data-icon="copy"></i></button>
+          <button class="btn btn--tertiary btn--icon" id="delBtn" data-tip="Delete" data-kbd="Del" aria-label="Delete zoom" disabled><i data-icon="trash"></i></button>
+        </div>
+      </section>
+
+      <section class="timeline" id="timeline" aria-label="Timeline">
+        <div class="tl-labels" id="tlLabels"></div>
+        <div class="tl-area" id="tlArea">
+          <div class="tl-ruler" id="ruler" aria-hidden="true"></div>
+          <div class="tl-rows" id="tlRows"></div>
+          <div class="tl-dim tl-dim--l" id="dimL"></div>
+          <div class="tl-dim tl-dim--r" id="dimR"></div>
+          <div class="tl-playhead" id="playhead"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector" aria-label="Inspector">
+      <header class="inspector__head" id="inspHead"></header>
+      <div class="inspector__body" id="inspBody"></div>
+    </aside>
+  </div>
+</div>
+<script src="editor.js"></script>
+</body>
+</html>

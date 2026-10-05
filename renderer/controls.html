@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script src="ui.js"></script>
+<style>
+  html, body { background: transparent; }
+  .hud { height: 100%; display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-2) 0 var(--space-4); background: var(--background-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-tertiary); flex: none; }
+  .hud[data-state="recording"] .dot { background: var(--status-error); animation: pulse 1.4s var(--ease) infinite; }
+  .hud[data-state="paused"] .dot { background: var(--status-warning); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
+  .time { display: flex; flex-direction: column; min-width: 96px; }
+  #label { font: var(--text-h3); font-variant-numeric: tabular-nums; letter-spacing: var(--ls-tight); }
+  .sep { width: 1px; height: 24px; background: var(--border-default); }
+  .ind { display: grid; place-items: center; width: 24px; height: 24px; color: var(--text-primary); }
+  .ind[data-on="false"] { color: var(--text-disabled); }
+  .spacer { flex: 1; }
+</style>
+</head>
+<body>
+<div class="hud" id="hud" data-state="countdown" role="group" aria-label="Recording controls">
+  <span class="dot" aria-hidden="true"></span>
+  <div class="time" role="timer" aria-live="off">
+    <span id="label">Starting in 3</span>
+    <span id="sub" class="t-caption subtle">Get ready</span>
+  </div>
+  <span class="sep" aria-hidden="true"></span>
+  <span class="ind" id="indMic" title="Microphone" role="img" aria-label="Microphone"><i data-icon="mic"></i></span>
+  <span class="ind" id="indCam" title="Camera" role="img" aria-label="Camera"><i data-icon="camera"></i></span>
+  <span class="ind" id="indSys" title="System audio" role="img" aria-label="System audio"><i data-icon="volume"></i></span>
+  <span class="spacer"></span>
+  <button class="btn btn--secondary btn--icon" id="pauseBtn" title="Pause (Ctrl+Shift+P)" aria-label="Pause recording" disabled><i data-icon="pause" data-fill></i></button>
+  <button class="btn btn--destructive" id="stopBtn" title="Stop (Ctrl+Shift+R)"><i data-icon="stop" data-fill></i><span id="stopLabel">Cancel</span></button>
+</div>
+<script>
+  const $ = (s) => document.getElementById(s);
+  const hud = $('hud');
+  let state = 'countdown';
+  let elapsed = 0, runStart = 0, timer = null;
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const total = () => Math.floor((elapsed + (runStart ? performance.now() - runStart : 0)) / 1000);
+
+  function setState(s) {
+    state = s;
+    hud.dataset.state = s;
+    const rec = s === 'recording', paused = s === 'paused';
+    $('pauseBtn').disabled = !(rec || paused);
+    $('pauseBtn').innerHTML = ui.icon(paused ? 'play' : 'pause', 'icon--fill');
+    $('pauseBtn').setAttribute('aria-label', paused ? 'Resume recording' : 'Pause recording');
+    $('pauseBtn').title = paused ? 'Resume (Ctrl+Shift+P)' : 'Pause (Ctrl+Shift+P)';
+    $('stopLabel').textContent = s === 'countdown' ? 'Cancel' : 'Stop';
+    $('sub').textContent = { countdown: 'Get ready', recording: 'Recording', paused: 'Paused', stopping: 'Saving…' }[s] || '';
+    $('stopBtn').disabled = s === 'stopping';
+    if (rec) { runStart = performance.now(); clearInterval(timer); timer = setInterval(() => { $('label').textContent = fmt(total()); }, 250); }
+    if (paused || s === 'stopping') { if (runStart) elapsed += performance.now() - runStart; runStart = 0; clearInterval(timer); $('label').textContent = fmt(total()); }
+  }
+
+  api.invoke('controls:get-config').then((c) => {
+    [['indMic', c.mic, 'mic', 'mic-off', 'Microphone'], ['indCam', c.cam, 'camera', 'camera-off', 'Camera'], ['indSys', c.sys, 'volume', 'volume-off', 'System audio']].forEach(([id, on, i, off, name]) => {
+      const el = $(id);
+      el.dataset.on = String(!!on);
+      el.querySelector('use').setAttribute('href', `#i-${on ? i : off}`);
+      el.title = `${name} ${on ? 'on' : 'off'}`;
+      el.setAttribute('aria-label', el.title);
+    });
+  });
+
+  let n = 3;
+  const tick = setInterval(() => {
+    n -= 1;
+    if (n > 0) { $('label').textContent = `Starting in ${n}`; return; }
+    clearInterval(tick);
+    $('label').textContent = '00:00';
+    api.send('controls:countdown-done');
+  }, 1000);
+
+  api.on('hud:state', setState);
+  $('pauseBtn').onclick = () => api.send('controls:pause-toggle');
+  $('stopBtn').onclick = () => api.send('controls:stop');
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && state === 'countdown') api.send('controls:stop'); });
+  setState('countdown');
+</script>
+</body>
+</html>
