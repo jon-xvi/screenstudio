@@ -1,0 +1,40 @@
+name: Release
+
+# Push a tag like v0.2.0 (matching package.json "version") to build the Windows installer and publish it.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tag must match package.json version
+        shell: bash
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::package.json version ($v) does not match tag $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+      - run: npm run check
+      - run: npm run dist
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ScreenStudio-Setup.exe
+          generate_release_notes: true

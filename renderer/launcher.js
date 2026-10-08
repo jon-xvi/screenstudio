@@ -97,6 +97,7 @@ async function loadDevices() {
   $('#displayRow').hidden = displays.length < 2;
   renderSummary();
 }
+renderSummary(); // show something immediately; device enumeration (and any permission prompt) can take a while
 loadDevices();
 ['#camSel', '#micSel', '#displaySel'].forEach((s) => $(s).addEventListener('change', renderSummary));
 
@@ -388,6 +389,7 @@ function recCard(p) {
 
   const art = document.createElement('article');
   art.className = 'rec-card';
+  art.dataset.name = p.name;
   const thumb = document.createElement('div');
   thumb.className = 'rec-card__thumb';
   const v = document.createElement('video');
@@ -429,7 +431,13 @@ function recCard(p) {
       confirmLabel: 'Delete', destructive: true,
     });
     if (!ok) return;
-    await api.invoke('project:delete', p.name);
+    try {
+      await api.invoke('project:delete', p.name);
+    } catch (e) {
+      ui.toast('Couldn’t delete this recording. Close any program using its files and try again.', { kind: 'error', duration: 6000 });
+      console.warn('delete failed', e);
+      return;
+    }
     art.remove();
     ui.toast('Recording deleted', { kind: 'success' });
     loadRecordings();

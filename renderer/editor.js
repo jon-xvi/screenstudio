@@ -24,7 +24,6 @@ let playing = false, dirty = true, exporting = false;
 let downs = [], track = [], sm1 = [], sm2 = [];
 let lastView = { vx: 0, vy: 0, vwid: 1, vhei: 1, L: { x: 0, y: 0, w: 1, h: 1 } };
 let lastCam = null;
-let ac = null, monitor = null, expDest = null;
 let nextId = 1, uid = 0;
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -373,15 +372,26 @@ view.addEventListener('click', (e) => {
 // ======================================================================
 function seek(t) {
   t = clamp(t, 0, dur);
+  camV.playbackRate = 1;
   screenV.currentTime = t;
   if (meta.hasCam) camV.currentTime = Math.max(0, t - meta.camOffset);
   dirty = true;
 }
+// Keep the webcam clip aligned with the screen clip during playback/export.
+// Recorded webm files have sparse keyframes (one every few seconds), so a seek can take seconds. Re-seeking on every small
+// drift therefore never catches up and freezes the camera. Seek only for real jumps and otherwise converge by nudging speed.
 function syncCam(t) {
   if (!meta.hasCam || camV.seeking) return;
   const want = Math.max(0, t - meta.camOffset);
-  if (Math.abs(camV.currentTime - want) > 0.35) camV.currentTime = want;
+  const drift = camV.currentTime - want; // > 0: camera is ahead
+  if (Math.abs(drift) > 2.5) { camV.currentTime = want; return; }
+  camV.playbackRate = Math.abs(drift) > 0.04 ? clamp(1 - drift, 0.5, 2) : 1;
   if (playing && camV.paused && want < (camV.duration || Infinity)) camV.play().catch(() => {});
+}
+// resolve once both clips have finished any pending seek
+async function settleSeeks(ms = 8000) {
+  const t0 = performance.now();
+  while ((screenV.seeking || (meta.hasCam && camV.seeking)) && performance.now() - t0 < ms) await new Promise((r) => setTimeout(r, 30));
 }
 function setPlayIcon(on) {
   const b = $('#playBtn');
@@ -391,14 +401,18 @@ function setPlayIcon(on) {
 }
 function play() {
   if (screenV.currentTime >= state.trimEnd - 0.05 || screenV.currentTime < state.trimStart) seek(state.trimStart);
-  ac?.resume();
   playing = true;
   screenV.play();
-  if (meta.hasCam) { camV.currentTime = Math.max(0, screenV.currentTime - meta.camOffset); camV.play().catch(() => {}); }
+  if (meta.hasCam) {
+    const want = Math.max(0, screenV.currentTime - meta.camOffset);
+    if (Math.abs(camV.currentTime - want) > 0.3 && !camV.seeking) camV.currentTime = want; // usually already in place after seek()
+    camV.play().catch(() => {});
+  }
   setPlayIcon(true);
 }
 function pause() {
   screenV.pause(); camV.pause();
+  camV.playbackRate = 1;
   playing = false;
   setPlayIcon(false);
 }
@@ -969,13 +983,14 @@ async function runExport(cfg) {
   document.body.append(c);
   const x = c.getContext('2d');
   try {
-    await ac?.resume();
-    if (monitor) monitor.gain.value = 0;
+    screenV.volume = 0; // silent while exporting; captureStream() below is unaffected by element volume
     await new Promise((res) => { screenV.addEventListener('seeked', res, { once: true }); seek(state.trimStart); });
+    await settleSeeks(); // the camera clip may still be seeking (sparse keyframes)
     draw(x, W, H, state.trimStart);
 
     const stream = c.captureStream(cfg.fps);
-    if (meta.hasAudio && cfg.audio && format !== 'gif' && expDest) expDest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
+    // Audio comes straight from the element (no Web Audio graph: a MediaElementSource route stalled the video clock).
+    if (meta.hasAudio && cfg.audio && format !== 'gif') screenV.captureStream().getAudioTracks().forEach((t) => stream.addTrack(t));
     // Hardware H.264 first (measured: ~28 fps and half the intermediate size vs software VP9 at ~16–27 fps).
     const mime = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     const pixels = (W * H) / (1920 * 1080);
@@ -984,9 +999,12 @@ async function runExport(cfg) {
     let chain = Promise.resolve();
     rec.ondataavailable = (e) => { if (e.data.size) chain = chain.then(async () => api.invoke('export:chunk', { id, buf: await e.data.arrayBuffer() })); };
     const stopped = new Promise((r) => { rec.onstop = r; });
-    rec.start(1000);
-    screenV.play();
+    // Start playback first and begin recording only once frames are actually moving, so the file doesn't open on a held frame.
+    await screenV.play();
     if (meta.hasCam) camV.play().catch(() => {});
+    const startedWaiting = performance.now();
+    while (screenV.currentTime <= state.trimStart + 0.03 && performance.now() - startedWaiting < 3000) await new Promise((r) => setTimeout(r, 10));
+    rec.start(1000);
     const span = state.trimEnd - state.trimStart;
     const interval = 1000 / cfg.fps;
     let last = 0;
@@ -1018,7 +1036,7 @@ async function runExport(cfg) {
     ui.toast(`Export failed: ${String(e.message || e).slice(0, 120)}`, { kind: 'error', duration: 8000 });
   } finally {
     c.remove(); prog.close();
-    if (monitor) monitor.gain.value = 1;
+    screenV.volume = 1;
     exporting = false;
     seek(prevT);
   }
@@ -1080,13 +1098,6 @@ async function boot() {
   let generated = 0;
   if (!loaded.state && downs.length) { state.zoomSegs = autoGenerate(); generated = state.zoomSegs.length; }
   rebuildTrack();
-
-  ac = new AudioContext();
-  const src = ac.createMediaElementSource(screenV);
-  monitor = ac.createGain();
-  src.connect(monitor).connect(ac.destination);
-  expDest = ac.createMediaStreamDestination();
-  src.connect(expDest);
 
   history = [snap()]; hIdx = 0;
   setAspect(); renderTimeline(); renderInspector(); updateRail(); updateTools(); updateHistoryButtons();

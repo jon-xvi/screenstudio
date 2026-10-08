@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { spawn } = require('child_process');
+const { Readable } = require('stream');
 
 let uIOhook = null;
 try { ({ uIOhook } = require('uiohook-napi')); } catch (e) { console.warn('uiohook unavailable:', e.message); }
@@ -14,6 +15,7 @@ const FFMPEG = require('ffmpeg-static').replace('app.asar', 'app.asar.unpacked')
 const RENDERER = path.join(__dirname, 'renderer');
 const RECORDS = path.join(app.getPath('documents'), 'ScreenStudio Recordings');
 const PRELOAD = path.join(__dirname, 'preload.js');
+const TEST_EXPORT_DIR = process.env.SS_TEST_EXPORT_DIR || null; // set only by the e2e suite
 
 protocol.registerSchemesAsPrivileged([{
   scheme: 'ss',
@@ -30,7 +32,8 @@ const editors = new Set();
 const exportJobs = new Map();
 
 const windowBg = () => (nativeTheme.shouldUseDarkColors ? '#09090b' : '#fafafa');
-const webPrefs =(extra = {}) => ({ preload: PRELOAD, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, ...extra });
+// autoplayPolicy: preview and export call video.play() from code, which Chromium otherwise blocks without a fresh user gesture.
+const webPrefs = (extra = {}) => ({ preload: PRELOAD, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', ...extra });
 
 function ffmpeg(args) {
   return new Promise((resolve, reject) => {
@@ -59,6 +62,7 @@ function openEditor(name) {
     backgroundColor: windowBg(), title: `ScreenStudio — ${name}`, webPreferences: webPrefs(),
   });
   w.loadURL(`ss://app/editor.html?project=${encodeURIComponent(name)}`);
+  w.projectName = name;
   editors.add(w);
   w.on('closed', () => { editors.delete(w); if (!launcher && !editors.size) app.quit(); });
   return w;
@@ -303,10 +307,13 @@ ipcMain.handle('projects:list', () => {
       return { name: n, createdAt: meta.createdAt || null, duration: meta.duration || 0, mode: meta.mode || 'screen', hasCam: !!meta.hasCam };
     });
 });
-ipcMain.handle('project:delete', (_e, name) => {
+ipcMain.handle('project:delete', async (_e, name) => {
   const dir = path.resolve(RECORDS, name);
   if (!dir.startsWith(RECORDS + path.sep)) throw new Error('Invalid project');
-  fs.rmSync(dir, { recursive: true, force: true });
+  // Windows keeps open video files locked, so close this project's editor first and let it release them.
+  const open = [...editors].filter((w) => !w.isDestroyed() && w.projectName === name);
+  await Promise.all(open.map((w) => new Promise((resolve) => { w.once('closed', resolve); w.close(); })));
+  await fs.promises.rm(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
   return true;
 });
 ipcMain.handle('project:open', (_e, name) => { openEditor(name).focus(); });
@@ -339,10 +346,13 @@ function exportArgs(format, fps, crf, out) {
 ipcMain.handle('export:begin', async (e, { format, name, fps, crf }) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   const ext = format === 'gif' ? 'gif' : 'mp4';
-  const res = await dialog.showSaveDialog(win, {
-    defaultPath: path.join(app.getPath('videos'), `${name}.${ext}`),
-    filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
-  });
+  // Test hook for the e2e suite (test/e2e.js): skip the native save dialog and write into a directory.
+  const res = TEST_EXPORT_DIR
+    ? { canceled: false, filePath: path.join(TEST_EXPORT_DIR, `${name}-${Date.now()}.${ext}`) }
+    : await dialog.showSaveDialog(win, {
+      defaultPath: path.join(app.getPath('videos'), `${name}.${ext}`),
+      filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+    });
   if (res.canceled || !res.filePath) return null;
 
   const id = String(Date.now());
@@ -385,9 +395,29 @@ ipcMain.handle('export:finish', async (_e, { id }) => {
   const err = j.failed?.message || j.err;
   endJob(id);
   if (code !== 0) { fs.rmSync(j.out, { force: true }); throw new Error(err.split('\n').slice(-2).join(' ') || 'ffmpeg failed'); }
-  shell.showItemInFolder(j.out);
+  if (!TEST_EXPORT_DIR) shell.showItemInFolder(j.out);
   return j.out;
 });
+
+// ---------- media over ss:// (with range requests, so recordings are seekable) ----------
+const MEDIA_TYPES = { '.webm': 'video/webm', '.mp4': 'video/mp4', '.json': 'application/json' };
+function serveMedia(req, file) {
+  let size;
+  try { size = fs.statSync(file).size; } catch { return new Response('not found', { status: 404 }); }
+  const headers = { 'Content-Type': MEDIA_TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Accept-Ranges': 'bytes' };
+  const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') || '');
+  if (!range) {
+    return new Response(Readable.toWeb(fs.createReadStream(file)), { status: 200, headers: { ...headers, 'Content-Length': String(size) } });
+  }
+  let start = range[1] ? parseInt(range[1], 10) : 0;
+  let end = range[2] ? parseInt(range[2], 10) : size - 1;
+  if (!range[1] && range[2]) { start = Math.max(0, size - parseInt(range[2], 10)); end = size - 1; } // suffix range: last N bytes
+  end = Math.min(end, size - 1);
+  if (start >= size || start > end) return new Response(null, { status: 416, headers: { ...headers, 'Content-Range': `bytes */${size}` } });
+  return new Response(Readable.toWeb(fs.createReadStream(file, { start, end })), {
+    status: 206, headers: { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': String(end - start + 1) },
+  });
+}
 
 // ---------- app lifecycle ----------
 app.whenReady().then(async () => {
@@ -401,7 +431,8 @@ app.whenReady().then(async () => {
     const root = isMedia ? RECORDS : RENDERER;
     const file = path.resolve(root, rel);
     if (!file.startsWith(root + path.sep)) return new Response('forbidden', { status: 403 });
-    return net.fetch(pathToFileURL(file).toString(), { headers: req.headers });
+    if (isMedia) return serveMedia(req, file); // needs HTTP range support or <video> can't seek
+    return net.fetch(pathToFileURL(file).toString());
   });
   installDisplayMediaHandler();
   globalShortcut.register('CommandOrControl+Shift+R', requestStop);

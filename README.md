@@ -22,15 +22,29 @@ npm start
 
 Requires Windows 10/11 and Node 20+.
 
+## Tests
+
+```bash
+npm run check      # fast: every script and JSON file parses (also runs in CI)
+npm run test:e2e   # drives the real app: records, pauses, edits, exports, deletes
+```
+
+The e2e suite launches Electron with the DevTools protocol and makes short real recordings of your screen (screen, custom area and window; camera and microphone off). It plays a quiet tone to verify system-audio capture, exercises the editor (zoom editing, undo/redo, trim, aspect ratios, persistence), exports MP4 and GIF, and probes the files with ffmpeg for size, frame rate, length and audio. It deletes everything it creates.
+
+- Test the packaged build: set `SS_EXE` to `dist\win-unpacked\ScreenStudio.exe`.
+- Also test a recording that has a camera: copy a recording into a new project folder and set `SS_FIXTURE` to that folder's name.
+
 ## Build the installer
 
 ```bash
 npm run dist     # → dist/ScreenStudio-Setup.exe
 ```
 
-To publish a new version: bump `version` in `package.json`, run `npm run dist`, then create a GitHub release whose asset is `dist/ScreenStudio-Setup.exe` (keep that file name so the website's "latest" download link keeps working).
-
 The app icon is generated from the brand mark with `npm run icon`. The download site lives in `docs/` and is served by GitHub Pages; `docs/tokens.css` is a copy of `renderer/tokens.css`, so re-copy it after changing the tokens.
+
+## Releases
+
+Bump `version` in `package.json`, commit, then push a matching tag (for example `v0.1.1`). The Release workflow builds the installer on GitHub and publishes it as `ScreenStudio-Setup.exe`, which keeps the website's "latest" download link working.
 
 ## Design
 

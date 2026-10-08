@@ -65,7 +65,7 @@
     [['indMic', c.mic, 'mic', 'mic-off', 'Microphone'], ['indCam', c.cam, 'camera', 'camera-off', 'Camera'], ['indSys', c.sys, 'volume', 'volume-off', 'System audio']].forEach(([id, on, i, off, name]) => {
       const el = $(id);
       el.dataset.on = String(!!on);
-      el.querySelector('use').setAttribute('href', `#i-${on ? i : off}`);
+      el.innerHTML = ui.icon(on ? i : off); // build the icon directly: this can run before the sprite/placeholder hydration
       el.title = `${name} ${on ? 'on' : 'off'}`;
       el.setAttribute('aria-label', el.title);
     });
