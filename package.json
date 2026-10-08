@@ -3,15 +3,58 @@
   "version": "0.1.0",
   "description": "Screen recorder and presenter for Figma prototypes and tutorials",
   "main": "main.js",
-  "scripts": {
-    "start": "electron ."
+  "author": "John",
+  "homepage": "https://jon-xvi.github.io/screenstudio/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jon-xvi/screenstudio.git"
   },
   "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "icon": "electron build/make-icon.js",
+    "dist": "electron-builder --win nsis"
+  },
   "devDependencies": {
-    "electron": "^44.5.1"
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
     "ffmpeg-static": "^5.3.0",
     "uiohook-napi": "^1.5.5"
+  },
+  "build": {
+    "appId": "com.screenstudio.app",
+    "npmRebuild": false,
+    "productName": "ScreenStudio",
+    "copyright": "Copyright © 2026 John",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/ffmpeg-static/**/*.{md,txt}",
+      "!**/*.map"
+    ],
+    "extraFiles": ["LICENSE", "THIRD-PARTY-NOTICES.md"],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**",
+      "node_modules/uiohook-napi/**"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "artifactName": "ScreenStudio-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ScreenStudio"
+    }
   }
 }

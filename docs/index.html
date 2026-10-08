@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenStudio — record, zoom, present</title>
+<meta name="description" content="A desktop screen recorder for Figma prototypes and tutorials. Auto-zoom on every click, camera layouts, polished exports. Free for Windows.">
+<meta property="og:title" content="ScreenStudio — record, zoom, present">
+<meta property="og:description" content="A desktop screen recorder for Figma prototypes and tutorials. Auto-zoom on every click, camera layouts, polished exports.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jon-xvi.github.io/screenstudio/">
+<link rel="icon" href="favicon.png">
+<script>
+  // apply saved theme before paint (falls back to the OS setting)
+  try { const t = localStorage.getItem('ss-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="brand" href="./" aria-label="ScreenStudio home">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>
+    ScreenStudio
+  </a>
+  <nav aria-label="Primary">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#download">Download</a>
+    <a href="https://github.com/jon-xvi/screenstudio">GitHub</a>
+  </nav>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle light or dark theme" title="Toggle theme">
+    <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+  </button>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <p class="eyebrow">Free for Windows · Open source</p>
+    <h1>Record. Zoom. Present.</h1>
+    <p class="lede">A screen recorder for Figma prototypes and tutorials. It follows your cursor, zooms in on every click, and exports clean, shareable video.</p>
+    <div class="cta">
+      <a class="btn btn--primary btn--lg" id="dlBtn" href="https://github.com/jon-xvi/screenstudio/releases/latest/download/ScreenStudio-Setup.exe">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download for Windows
+      </a>
+      <a class="btn btn--secondary btn--lg" href="https://github.com/jon-xvi/screenstudio">View on GitHub</a>
+    </div>
+    <p class="meta" id="dlMeta">Windows 10 / 11 · 64-bit · about 130 MB</p>
+
+    <!-- illustration of the editor: canvas, inspector, timeline -->
+    <div class="shot" role="img" aria-label="Illustration of the ScreenStudio editor: a video canvas, a timeline with zoom blocks, and a properties panel.">
+      <div class="shot__bar"><i></i><i></i><i></i><span></span></div>
+      <div class="shot__body">
+        <div class="shot__rail"><b></b><b class="on"></b><b></b><b></b></div>
+        <div class="shot__main">
+          <div class="shot__canvas">
+            <div class="shot__screen">
+              <div class="s-line w60"></div><div class="s-line w40"></div><div class="s-block"></div>
+              <div class="s-ring"></div>
+            </div>
+            <div class="shot__cam"></div>
+          </div>
+          <div class="shot__timeline">
+            <div class="t-row"><span class="t-clip w100"></span></div>
+            <div class="t-row"><span class="t-zoom" style="left:18%;width:20%">2.0×</span><span class="t-zoom" style="left:62%;width:16%">2.4×</span></div>
+            <div class="t-head"></div>
+          </div>
+        </div>
+        <div class="shot__side">
+          <div class="p-title"></div>
+          <div class="p-row"><span></span><i style="width:70%"></i></div>
+          <div class="p-row"><span></span><i style="width:45%"></i></div>
+          <div class="p-row"><span></span><i style="width:60%"></i></div>
+          <div class="p-btn"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="section" aria-labelledby="h-features">
+    <h2 id="h-features">Everything you need to present a prototype</h2>
+    <ul class="features">
+      <li>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
+        <h3>Auto-zoom on clicks</h3>
+        <p>ScreenStudio records every click and generates smooth zooms that follow your cursor. Fine-tune timing, scale and easing on the timeline.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+        <h3>Capture what matters</h3>
+        <p>Record a full screen, a custom area or a single window, with your microphone, system audio and camera. Pause and resume any time.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="m16 13 5.22 3.48a.5.5 0 0 0 .78-.42V7.87a.5.5 0 0 0-.75-.43L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+        <h3>Camera layouts</h3>
+        <p>Show yourself as a bubble, side by side with the screen, or full frame. Choose the shape, size, border and position.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <h3>Polished by default</h3>
+        <p>Backgrounds, padding, rounded corners, shadows, cursor highlights and click ripples make a plain recording look designed.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <h3>Export for anywhere</h3>
+        <p>One-click presets for YouTube, Shorts and TikTok, LinkedIn and presentations, or choose format, resolution, frame rate and quality yourself. MP4 and GIF.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h3>Private by design</h3>
+        <p>Everything stays on your computer. No account, no uploads, no tracking. Your recordings are plain files in your Documents folder.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section id="how" class="section section--tint" aria-labelledby="h-how">
+    <h2 id="h-how">From idea to share-ready in three steps</h2>
+    <ol class="steps">
+      <li><span class="n">1</span><h3>Record</h3><p>Pick what to capture, check the summary, press Start. A small bar keeps out of the way while you work.</p></li>
+      <li><span class="n">2</span><h3>Edit</h3><p>Your zooms are already placed. Select anything on the timeline or canvas to adjust just that.</p></li>
+      <li><span class="n">3</span><h3>Export</h3><p>Choose a preset and export. Rendering runs once and the file is encoded as it goes.</p></li>
+    </ol>
+  </section>
+
+  <section id="download" class="section download" aria-labelledby="h-dl">
+    <h2 id="h-dl">Download ScreenStudio</h2>
+    <p class="lede">Free and open source. Windows 10 or 11, 64-bit.</p>
+    <div class="cta cta--center">
+      <a class="btn btn--primary btn--lg" id="dlBtn2" href="https://github.com/jon-xvi/screenstudio/releases/latest/download/ScreenStudio-Setup.exe">
+        <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download ScreenStudio-Setup.exe
+      </a>
+    </div>
+    <div class="note" role="note">
+      <h3>If Windows says “Windows protected your PC”</h3>
+      <p>ScreenStudio isn’t code-signed yet, so Windows SmartScreen shows a warning for new apps. Choose <strong>More info</strong>, then <strong>Run anyway</strong>. You can read every line of the source on <a href="https://github.com/jon-xvi/screenstudio">GitHub</a>, and see all releases on the <a href="https://github.com/jon-xvi/screenstudio/releases">releases page</a>.</p>
+    </div>
+    <dl class="reqs">
+      <div><dt>System</dt><dd>Windows 10 or 11, 64-bit</dd></div>
+      <div><dt>Recordings</dt><dd>Saved to Documents → ScreenStudio Recordings</dd></div>
+      <div><dt>Licence</dt><dd>ISC · includes FFmpeg (GPL). <a href="https://github.com/jon-xvi/screenstudio/blob/main/THIRD-PARTY-NOTICES.md">Notices</a></dd></div>
+    </dl>
+  </section>
+</main>
+
+<footer class="footer">
+  <span>© 2026 John · ScreenStudio</span>
+  <span><a href="https://github.com/jon-xvi/screenstudio">GitHub</a> · <a href="https://github.com/jon-xvi/screenstudio/issues">Report an issue</a> · <a href="https://github.com/jon-xvi/screenstudio/blob/main/LICENSE">Licence</a></span>
+</footer>
+
+<script>
+  document.getElementById('themeBtn').onclick = () => {
+    const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const cur = document.documentElement.dataset.theme || (sysDark ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('ss-theme', next); } catch (e) {}
+  };
+  // show the live version and size from the latest GitHub release (keeps the static text if offline or rate-limited)
+  fetch('https://api.github.com/repos/jon-xvi/screenstudio/releases/latest').then((r) => r.ok ? r.json() : Promise.reject()).then((rel) => {
+    const a = (rel.assets || []).find((x) => x.name === 'ScreenStudio-Setup.exe');
+    if (!a) return;
+    const mb = Math.round(a.size / 1048576);
+    document.getElementById('dlMeta').textContent = `${rel.tag_name} · Windows 10 / 11 · 64-bit · ${mb} MB`;
+  }).catch(() => {});
+</script>
+</body>
+</html>
