@@ -1,6 +1,6 @@
 const {
   app, BrowserWindow, ipcMain, desktopCapturer, screen, session, dialog,
-  shell, protocol, net, globalShortcut, nativeTheme,
+  shell, protocol, net, globalShortcut, nativeTheme, powerSaveBlocker,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -323,7 +323,20 @@ ipcMain.handle('project:save', (_e, { name, state }) => {
 ipcMain.handle('project:reveal', (_e, name) => shell.openPath(path.join(RECORDS, name)));
 
 // ---------- export ----------
-ipcMain.handle('export:begin', async (e, { format, name }) => {
+// The editor renders in real time and streams MediaRecorder chunks straight into ffmpeg's stdin, so the
+// final H.264/GIF encode overlaps the render instead of running after it.
+function exportArgs(format, fps, crf, out) {
+  const f = Math.min(60, Math.max(10, Number(fps) || 30));
+  const q = Math.min(30, Math.max(10, Number(crf) || 16));
+  if (format === 'gif') {
+    return ['-y', '-i', 'pipe:0', '-an', '-vf',
+      `fps=${Math.min(f, 20)},scale='min(960,iw)':-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4`, out];
+  }
+  return ['-y', '-i', 'pipe:0', '-vf', `fps=${f}`, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(q), '-threads', '4',
+    '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out];
+}
+
+ipcMain.handle('export:begin', async (e, { format, name, fps, crf }) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   const ext = format === 'gif' ? 'gif' : 'mp4';
   const res = await dialog.showSaveDialog(win, {
@@ -331,36 +344,47 @@ ipcMain.handle('export:begin', async (e, { format, name }) => {
     filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
   });
   if (res.canceled || !res.filePath) return null;
+
   const id = String(Date.now());
-  const tmp = path.join(app.getPath('temp'), `screenstudio-${id}.webm`);
-  fs.writeFileSync(tmp, '');
-  exportJobs.set(id, { tmp, out: res.filePath, format });
+  const child = spawn(FFMPEG, exportArgs(format, fps, crf, res.filePath), { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+  const job = { child, out: res.filePath, err: '', failed: null, blocker: powerSaveBlocker.start('prevent-app-suspension') };
+  child.stderr.on('data', (d) => { job.err = (job.err + d).slice(-1000); });
+  child.stdin.on('error', (err) => { job.failed = job.failed || err; }); // EPIPE if ffmpeg exits early
+  child.on('error', (err) => { job.failed = err; });
+  job.closed = new Promise((resolve) => child.on('close', (code) => resolve(code)));
+  exportJobs.set(id, job);
   return id;
 });
 
 ipcMain.handle('export:chunk', (_e, { id, buf }) => {
-  fs.appendFileSync(exportJobs.get(id).tmp, Buffer.from(buf));
+  const j = exportJobs.get(id);
+  if (!j || j.failed) throw new Error(j?.failed?.message || j?.err || 'ffmpeg stopped unexpectedly');
+  return new Promise((resolve, reject) => j.child.stdin.write(Buffer.from(buf), (err) => (err ? reject(err) : resolve())));
 });
 
-ipcMain.handle('export:cancel', (_e, id) => {
+function endJob(id) {
   const j = exportJobs.get(id);
-  if (j) { fs.rmSync(j.tmp, { force: true }); exportJobs.delete(id); }
+  if (!j) return;
+  powerSaveBlocker.stop(j.blocker);
+  exportJobs.delete(id);
+}
+
+ipcMain.handle('export:cancel', async (_e, id) => {
+  const j = exportJobs.get(id);
+  if (!j) return;
+  j.child.kill();
+  await j.closed;
+  fs.rmSync(j.out, { force: true }); // drop the partial file
+  endJob(id);
 });
 
-ipcMain.handle('export:finish', async (_e, { id, fps = 30, crf = 18 }) => {
+ipcMain.handle('export:finish', async (_e, { id }) => {
   const j = exportJobs.get(id);
-  const f = Math.min(60, Math.max(10, Number(fps) || 30));
-  const q = Math.min(30, Math.max(10, Number(crf) || 18));
-  const args = j.format === 'gif'
-    ? ['-y', '-i', j.tmp, '-an', '-vf', `fps=${Math.min(f, 20)},scale='min(960,iw)':-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4`, j.out]
-    : ['-y', '-i', j.tmp, '-vf', `fps=${f}`, '-c:v', 'libx264', '-preset', 'medium', '-crf', String(q), '-pix_fmt', 'yuv420p',
-       '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', j.out];
-  try {
-    await ffmpeg(args);
-  } finally {
-    fs.rmSync(j.tmp, { force: true });
-    exportJobs.delete(id);
-  }
+  j.child.stdin.end();
+  const code = await j.closed;
+  const err = j.failed?.message || j.err;
+  endJob(id);
+  if (code !== 0) { fs.rmSync(j.out, { force: true }); throw new Error(err.split('\n').slice(-2).join(' ') || 'ffmpeg failed'); }
   shell.showItemInFolder(j.out);
   return j.out;
 });

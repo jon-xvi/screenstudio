@@ -864,7 +864,12 @@ const PRESETS = [
   { id: 'gif', name: 'GIF', desc: '16:9 · 720p · 15 fps', aspect: '16:9', fmt: 'gif', res: 720, fps: 15, q: 'standard' },
   { id: 'custom', name: 'Custom', desc: 'Choose your own settings', aspect: null, fmt: 'mp4', res: 1080, fps: 30, q: 'high' },
 ];
-const CRF = { standard: 23, high: 18, max: 14 };
+const CRF = { standard: 20, high: 16, max: 13 }; // x264 veryfast: crf 16 ≈ the size/quality of the old medium crf 18
+
+// Frame pacing that doesn't depend on display refresh: requestAnimationFrame stalls when the window is
+// covered or minimised, which silently dropped export to ~16 fps. A MessageChannel keeps ticking.
+const paceChannel = new MessageChannel();
+const paceTick = () => new Promise((r) => { paceChannel.port1.onmessage = () => r(); paceChannel.port2.postMessage(0); });
 function outSize(cfg) {
   const [bw, bh] = ASPECTS[cfg.aspect || state.aspect];
   const s = cfg.res / 1080;
@@ -951,7 +956,7 @@ async function runExport(cfg) {
   if (state.aspect !== cfg.aspect) { state.aspect = cfg.aspect; setAspect(); commit(); renderInspector(); }
   const format = cfg.fmt === 'gif' ? 'gif' : 'mp4';
   const [W, H] = outSize(cfg);
-  const id = await api.invoke('export:begin', { format, name });
+  const id = await api.invoke('export:begin', { format, name, fps: cfg.fps, crf: CRF[cfg.q] });
   if (!id) return;
   pause();
   exporting = true;
@@ -971,8 +976,11 @@ async function runExport(cfg) {
 
     const stream = c.captureStream(cfg.fps);
     if (meta.hasAudio && cfg.audio && format !== 'gif' && expDest) expDest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
-    const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000 });
+    // Hardware H.264 first (measured: ~28 fps and half the intermediate size vs software VP9 at ~16–27 fps).
+    const mime = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+    const pixels = (W * H) / (1920 * 1080);
+    const bps = Math.round(clamp(20_000_000 * pixels * (cfg.fps / 30), 8_000_000, 45_000_000)); // high-bitrate intermediate; ffmpeg makes the small final file
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bps });
     let chain = Promise.resolve();
     rec.ondataavailable = (e) => { if (e.data.size) chain = chain.then(async () => api.invoke('export:chunk', { id, buf: await e.data.arrayBuffer() })); };
     const stopped = new Promise((r) => { rec.onstop = r; });
@@ -980,25 +988,27 @@ async function runExport(cfg) {
     screenV.play();
     if (meta.hasCam) camV.play().catch(() => {});
     const span = state.trimEnd - state.trimStart;
-    await new Promise((resolve) => {
-      const loop = () => {
-        const t = screenV.currentTime;
-        if (cancelled || t >= state.trimEnd - 0.02 || screenV.ended) return resolve();
-        syncCam(t);
-        draw(x, W, H, t);
-        prog.set(null, null, clamp((t - state.trimStart) / span) * 100);
-        requestAnimationFrame(loop);
-      };
-      loop();
-    });
+    const interval = 1000 / cfg.fps;
+    let last = 0;
+    for (;;) {
+      await paceTick();
+      const now = performance.now();
+      if (now - last < interval - 2) { await new Promise((r) => setTimeout(r, 1)); continue; } // don't spin a core between frames
+      last = now;
+      const t = screenV.currentTime;
+      if (cancelled || t >= state.trimEnd - 0.02 || screenV.ended) break;
+      syncCam(t);
+      draw(x, W, H, t);
+      prog.set(null, `About ${fmt(Math.max(0, state.trimEnd - t))} left. Keep this window open.`, clamp((t - state.trimStart) / span) * 100);
+    }
     screenV.pause(); camV.pause();
     rec.stop();
     await stopped; await chain;
 
     if (cancelled) { await api.invoke('export:cancel', id); ui.toast('Export cancelled'); }
     else {
-      prog.busy(); prog.set(`Encoding ${format.toUpperCase()}…`, 'Converting to a shareable file.', 100);
-      const out = await api.invoke('export:finish', { id, fps: cfg.fps, crf: CRF[cfg.q] });
+      prog.busy(); prog.set('Finishing…', `Writing your ${format.toUpperCase()} file.`, 100);
+      const out = await api.invoke('export:finish', { id });
       ui.toast('Export complete', { kind: 'success', action: { label: 'Show file', onClick: () => api.invoke('project:reveal', name) }, duration: 6000 });
       console.info('exported to', out);
     }

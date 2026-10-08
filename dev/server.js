@@ -15,6 +15,13 @@ http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
   const p = decodeURIComponent(url.pathname);
 
+  if (req.method === 'POST' && p === '/__save') { // benchmark helper: stores an uploaded blob in the OS temp dir
+    const dir = path.join(os.tmpdir(), 'ss-bench'); fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, path.basename(url.searchParams.get('name') || 'out.webm'));
+    const ws = fs.createWriteStream(file);
+    req.pipe(ws);
+    return ws.on('finish', () => send(res, 200, file));
+  }
   if (p === '/__mock.js') return send(res, 200, fs.readFileSync(path.join(__dirname, 'mock.js')), 'text/javascript');
   if (p === '/__api/projects') {
     const list = fs.existsSync(REC) ? fs.readdirSync(REC).filter((n) => fs.existsSync(path.join(REC, n, 'meta.json'))).sort().reverse().map((n) => {
