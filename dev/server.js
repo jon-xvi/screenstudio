@@ -6,7 +6,7 @@ const path = require('path');
 const os = require('os');
 
 const ROOT = path.join(__dirname, '..', 'renderer');
-const REC = path.join(os.homedir(), 'Documents', 'ScreenStudio Recordings');
+const REC = path.join(os.homedir(), 'Documents', 'ViewBox Recordings');
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.webm': 'video/webm', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
 function send(res, code, body, type = 'text/plain') { res.writeHead(code, { 'Content-Type': type }); res.end(body); }

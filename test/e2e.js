@@ -1,6 +1,6 @@
 /* End-to-end suite: launches the real app and drives it over the DevTools protocol.
  *   npm run test:e2e                       (runs from source)
- *   SS_EXE=dist\win-unpacked\ScreenStudio.exe npm run test:e2e   (runs the packaged build)
+ *   SS_EXE=dist\win-unpacked\ViewBox.exe npm run test:e2e   (runs the packaged build)
  * It records the real screen for a few seconds (camera and microphone are switched off) and deletes its recordings afterwards.
  */
 const { spawn, spawnSync } = require('child_process');
@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, '..');
 const EXE = process.env.SS_EXE || path.join(ROOT, 'node_modules', 'electron', 'dist', 'electron.exe');
 const ARGS = process.env.SS_EXE ? [] : [ROOT];
 const PORT = 9333;
-const RECORDS = path.join(os.homedir(), 'Documents', 'ScreenStudio Recordings');
+const RECORDS = path.join(os.homedir(), 'Documents', 'ViewBox Recordings');
 const EXPORT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ss-e2e-'));
 const FFMPEG = require('ffmpeg-static');
 
@@ -39,6 +39,7 @@ async function waitFor(fn, { timeout = 15000, interval = 200, label = 'condition
 }
 const assert = (c, msg) => { if (!c) throw new Error(msg || 'assertion failed'); };
 async function test(name, fn) {
+  if (process.env.SS_ONLY && !name.toLowerCase().includes(process.env.SS_ONLY.toLowerCase())) return; // SS_ONLY="custom area" runs one test
   const t0 = Date.now();
   try { await fn(); results.push({ name, ok: true }); console.log(`  ✓ ${name} (${((Date.now() - t0) / 1000).toFixed(1)}s)`); }
   catch (e) { results.push({ name, ok: false, err: e.message }); console.log(`  ✗ ${name}\n      ${e.message}`); await recover(); }
@@ -100,6 +101,7 @@ async function record({ mode = 'screen', pauseMs = 0, activeMs = 3000, region = 
     await launcher.evaluate(() => document.querySelector('.dialog-backdrop .rec-card').click());
   }
   const hud = await pageWith('controls.html', 15000);
+  await hud.waitForSelector('#hud', { timeout: 10000 }); // the page exists a moment before its content does
   assert(await hud.evaluate(() => document.getElementById('hud').dataset.state) === 'countdown', 'HUD should start in countdown');
   await hud.waitForFunction(() => document.getElementById('hud').dataset.state === 'recording', { timeout: 15000, polling: 200 });
   if (tone) { // a quiet 440 Hz tone through the system output, so system-audio capture can be verified in the result
@@ -171,7 +173,7 @@ const press = async (page, key, mods = []) => { await page.evaluate(() => docume
 
 // ======================================================================
 (async () => {
-  console.log(`ScreenStudio e2e — ${process.env.SS_EXE ? 'packaged build' : 'from source'}\n`);
+  console.log(`ViewBox e2e — ${process.env.SS_EXE ? 'packaged build' : 'from source'}\n`);
   try { spawnSync('taskkill', ['/F', '/IM', path.basename(EXE)], { stdio: 'ignore' }); } catch { /* none running */ }
   await sleep(800);
   await launch();
@@ -226,7 +228,7 @@ const press = async (page, key, mods = []) => { await page.evaluate(() => docume
   });
 
   console.log('\nEditor');
-  const ed = rec.editor;
+  const ed = rec && rec.editor; // undefined when SS_ONLY skips the recording test
   await test('canvas renders real pixels and the inspector shows Canvas', async () => {
     const painted = await ev(ed, () => { const d = view.getContext('2d').getImageData(0, 0, view.width, view.height).data; const seen = new Set(); for (let i = 0; i < d.length; i += 8000) seen.add(d[i]); return seen.size > 8; });
     assert(painted, 'canvas looks blank');

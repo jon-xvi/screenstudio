@@ -1,4 +1,4 @@
-/* ScreenStudio design tokens. Semantic only — see /DESIGN.md §5. Never use raw values in feature CSS. */
+/* ViewBox design tokens. Semantic only — see /DESIGN.md §5. Never use raw values in feature CSS. */
 
 :root {
   /* ---- Light theme (default) ---- */

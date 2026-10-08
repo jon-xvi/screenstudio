@@ -1,4 +1,4 @@
-/* ScreenStudio UI runtime: icon sprite, tooltips, toasts, dialogs, range fill, segmented controls. */
+/* ViewBox UI runtime: icon sprite, tooltips, toasts, dialogs, range fill, segmented controls. */
 (function () {
   // One icon system: 24px grid, stroke drawn by .icon (1.75, round caps).
   const ICONS = {

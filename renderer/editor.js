@@ -1,4 +1,4 @@
-/* ScreenStudio editor: Canvas · Timeline · Inspector. See DESIGN.md §7–§8. */
+/* ViewBox editor: Canvas · Timeline · Inspector. See DESIGN.md §7–§8. */
 const $ = (s) => document.querySelector(s);
 const name = new URLSearchParams(location.search).get('project');
 const view = $('#view');
@@ -1075,7 +1075,7 @@ $('#homeBtn').onclick = () => api.invoke('launcher:show');
 // ======================================================================
 async function boot() {
   $('#projName').textContent = name;
-  document.title = `${name} — ScreenStudio`;
+  document.title = `${name} — ViewBox`;
   buildExportMenu();
   const loaded = await api.invoke('project:load', name);
   meta = loaded.meta;

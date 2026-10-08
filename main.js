@@ -13,7 +13,26 @@ try { ({ uIOhook } = require('uiohook-napi')); } catch (e) { console.warn('uioho
 
 const FFMPEG = require('ffmpeg-static').replace('app.asar', 'app.asar.unpacked');
 const RENDERER = path.join(__dirname, 'renderer');
-const RECORDS = path.join(app.getPath('documents'), 'ScreenStudio Recordings');
+// The app was called "ScreenStudio" before 0.2.0. Move its recordings into the new folder so nothing is orphaned.
+function resolveRecordsDir() {
+  const docs = app.getPath('documents');
+  const current = path.join(docs, 'ViewBox Recordings');
+  const legacy = path.join(docs, 'ScreenStudio Recordings');
+  try {
+    if (!fs.existsSync(legacy)) return current;
+    if (!fs.existsSync(current)) { fs.renameSync(legacy, current); return current; }
+    for (const name of fs.readdirSync(legacy)) { // both exist: move over whatever isn't already there
+      const to = path.join(current, name);
+      if (!fs.existsSync(to)) fs.renameSync(path.join(legacy, name), to);
+    }
+    try { fs.rmdirSync(legacy); } catch { /* not empty: leave it */ }
+    return current;
+  } catch (e) {
+    console.warn('recordings migration failed, using the old folder:', e.message); // e.g. the folder is open in Explorer
+    return fs.existsSync(legacy) ? legacy : current;
+  }
+}
+const RECORDS = resolveRecordsDir();
 const PRELOAD = path.join(__dirname, 'preload.js');
 const TEST_EXPORT_DIR = process.env.SS_TEST_EXPORT_DIR || null; // set only by the e2e suite
 
@@ -49,7 +68,7 @@ function ffmpeg(args) {
 function createLauncher() {
   launcher = new BrowserWindow({
     width: 1080, height: 540, frame: false, resizable: false, show: false,
-    backgroundColor: windowBg(), title: 'ScreenStudio', webPreferences: webPrefs(),
+    backgroundColor: windowBg(), title: 'ViewBox', webPreferences: webPrefs(),
   });
   launcher.loadURL('ss://app/launcher.html');
   launcher.once('ready-to-show', () => launcher.show());
@@ -59,7 +78,7 @@ function createLauncher() {
 function openEditor(name) {
   const w = new BrowserWindow({
     width: 1480, height: 920, minWidth: 1100, minHeight: 700, autoHideMenuBar: true,
-    backgroundColor: windowBg(), title: `ScreenStudio — ${name}`, webPreferences: webPrefs(),
+    backgroundColor: windowBg(), title: `ViewBox — ${name}`, webPreferences: webPrefs(),
   });
   w.loadURL(`ss://app/editor.html?project=${encodeURIComponent(name)}`);
   w.projectName = name;
@@ -88,7 +107,7 @@ async function captureThumbs() {
     for (const s of sources) {
       if (s.id.startsWith('screen:') && !s.thumbnail.isEmpty()) screens[s.display_id] = s.thumbnail.toDataURL();
     }
-    const win = sources.find((s) => s.id.startsWith('window:') && s.name && !s.name.includes('ScreenStudio') && !s.thumbnail.isEmpty());
+    const win = sources.find((s) => s.id.startsWith('window:') && s.name && !s.name.includes('ViewBox') && !s.thumbnail.isEmpty());
     thumbCache = { screens, window: win ? win.thumbnail.toDataURL() : null };
   } catch (e) {
     console.warn('thumbnail capture failed', e.message);
@@ -101,7 +120,7 @@ ipcMain.handle('sources:list', async () => {
     types: ['window'], thumbnailSize: { width: 360, height: 220 }, fetchWindowIcons: false,
   });
   return sources
-    .filter((s) => s.name && !s.name.includes('ScreenStudio'))
+    .filter((s) => s.name && !s.name.includes('ViewBox'))
     .map((s) => ({ id: s.id, name: s.name, thumbnail: s.thumbnail.toDataURL() }));
 });
 

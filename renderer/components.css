@@ -1,4 +1,4 @@
-/* ScreenStudio component library — see /DESIGN.md §6. Tokens only. */
+/* ViewBox component library — see /DESIGN.md §6. Tokens only. */
 
 * { box-sizing: border-box; margin: 0; }
 html, body { height: 100%; background: var(--background-primary); color: var(--text-primary); overflow: hidden; user-select: none; font: var(--text-body); }

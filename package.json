@@ -1,13 +1,13 @@
 {
-  "name": "screenstudio",
-  "version": "0.1.1",
+  "name": "viewbox",
+  "version": "0.2.0",
   "description": "Screen recorder and presenter for Figma prototypes and tutorials",
   "main": "main.js",
   "author": "John",
-  "homepage": "https://jon-xvi.github.io/screenstudio/",
+  "homepage": "https://jon-xvi.github.io/viewbox/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jon-xvi/screenstudio.git"
+    "url": "https://github.com/jon-xvi/viewbox.git"
   },
   "license": "ISC",
   "scripts": {
@@ -27,9 +27,9 @@
     "uiohook-napi": "^1.5.5"
   },
   "build": {
-    "appId": "com.screenstudio.app",
+    "appId": "com.viewbox.app",
     "npmRebuild": false,
-    "productName": "ScreenStudio",
+    "productName": "ViewBox",
     "copyright": "Copyright © 2026 John",
     "directories": {
       "output": "dist",
@@ -62,7 +62,7 @@
         }
       ],
       "icon": "build/icon.png",
-      "artifactName": "ScreenStudio-Setup.${ext}"
+      "artifactName": "ViewBox-Setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -70,7 +70,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "ScreenStudio"
+      "shortcutName": "ViewBox"
     }
   }
 }

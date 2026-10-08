@@ -1,4 +1,4 @@
-# ScreenStudio — product & design system
+# ViewBox — product & design system
 
 Build order (never skip ahead): architecture → IA → flows → principles → tokens → components → shell → screens → interactions → states → motion → accessibility → visual QA → implementation → polish.
 Source of truth for visuals: `renderer/tokens.css` (tokens) and `renderer/components.css` (components). Icons: `renderer/ui.js`.

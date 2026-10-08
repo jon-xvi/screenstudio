@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ScreenStudio — record, zoom, present</title>
+<title>ViewBox — record, zoom, present</title>
 <meta name="description" content="A desktop screen recorder for Figma prototypes and tutorials. Auto-zoom on every click, camera layouts, polished exports. Free for Windows.">
-<meta property="og:title" content="ScreenStudio — record, zoom, present">
+<meta property="og:title" content="ViewBox — record, zoom, present">
 <meta property="og:description" content="A desktop screen recorder for Figma prototypes and tutorials. Auto-zoom on every click, camera layouts, polished exports.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://jon-xvi.github.io/screenstudio/">
+<meta property="og:url" content="https://jon-xvi.github.io/viewbox/">
 <link rel="icon" href="favicon.png">
 <script>
   // apply saved theme before paint (falls back to the OS setting)
@@ -21,15 +21,15 @@
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="nav">
-  <a class="brand" href="./" aria-label="ScreenStudio home">
+  <a class="brand" href="./" aria-label="ViewBox home">
     <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>
-    ScreenStudio
+    ViewBox
   </a>
   <nav aria-label="Primary">
     <a href="#features">Features</a>
     <a href="#how">How it works</a>
     <a href="#download">Download</a>
-    <a href="https://github.com/jon-xvi/screenstudio">GitHub</a>
+    <a href="https://github.com/jon-xvi/viewbox">GitHub</a>
   </nav>
   <button class="icon-btn" id="themeBtn" aria-label="Toggle light or dark theme" title="Toggle theme">
     <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
@@ -42,16 +42,16 @@
     <h1>Record. Zoom. Present.</h1>
     <p class="lede">A screen recorder for Figma prototypes and tutorials. It follows your cursor, zooms in on every click, and exports clean, shareable video.</p>
     <div class="cta">
-      <a class="btn btn--primary btn--lg" id="dlBtn" href="https://github.com/jon-xvi/screenstudio/releases/latest/download/ScreenStudio-Setup.exe">
+      <a class="btn btn--primary btn--lg" id="dlBtn" href="https://github.com/jon-xvi/viewbox/releases/latest/download/ViewBox-Setup.exe">
         <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         Download for Windows
       </a>
-      <a class="btn btn--secondary btn--lg" href="https://github.com/jon-xvi/screenstudio">View on GitHub</a>
+      <a class="btn btn--secondary btn--lg" href="https://github.com/jon-xvi/viewbox">View on GitHub</a>
     </div>
     <p class="meta" id="dlMeta">Windows 10 / 11 · 64-bit · about 130 MB</p>
 
     <!-- illustration of the editor: canvas, inspector, timeline -->
-    <div class="shot" role="img" aria-label="Illustration of the ScreenStudio editor: a video canvas, a timeline with zoom blocks, and a properties panel.">
+    <div class="shot" role="img" aria-label="Illustration of the ViewBox editor: a video canvas, a timeline with zoom blocks, and a properties panel.">
       <div class="shot__bar"><i></i><i></i><i></i><span></span></div>
       <div class="shot__body">
         <div class="shot__rail"><b></b><b class="on"></b><b></b><b></b></div>
@@ -86,7 +86,7 @@
       <li>
         <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
         <h3>Auto-zoom on clicks</h3>
-        <p>ScreenStudio records every click and generates smooth zooms that follow your cursor. Fine-tune timing, scale and easing on the timeline.</p>
+        <p>ViewBox records every click and generates smooth zooms that follow your cursor. Fine-tune timing, scale and easing on the timeline.</p>
       </li>
       <li>
         <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
@@ -126,29 +126,29 @@
   </section>
 
   <section id="download" class="section download" aria-labelledby="h-dl">
-    <h2 id="h-dl">Download ScreenStudio</h2>
+    <h2 id="h-dl">Download ViewBox</h2>
     <p class="lede">Free and open source. Windows 10 or 11, 64-bit.</p>
     <div class="cta cta--center">
-      <a class="btn btn--primary btn--lg" id="dlBtn2" href="https://github.com/jon-xvi/screenstudio/releases/latest/download/ScreenStudio-Setup.exe">
+      <a class="btn btn--primary btn--lg" id="dlBtn2" href="https://github.com/jon-xvi/viewbox/releases/latest/download/ViewBox-Setup.exe">
         <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-        Download ScreenStudio-Setup.exe
+        Download ViewBox-Setup.exe
       </a>
     </div>
     <div class="note" role="note">
       <h3>If Windows says “Windows protected your PC”</h3>
-      <p>ScreenStudio isn’t code-signed yet, so Windows SmartScreen shows a warning for new apps. Choose <strong>More info</strong>, then <strong>Run anyway</strong>. You can read every line of the source on <a href="https://github.com/jon-xvi/screenstudio">GitHub</a>, and see all releases on the <a href="https://github.com/jon-xvi/screenstudio/releases">releases page</a>.</p>
+      <p>ViewBox isn’t code-signed yet, so Windows SmartScreen shows a warning for new apps. Choose <strong>More info</strong>, then <strong>Run anyway</strong>. You can read every line of the source on <a href="https://github.com/jon-xvi/viewbox">GitHub</a>, and see all releases on the <a href="https://github.com/jon-xvi/viewbox/releases">releases page</a>.</p>
     </div>
     <dl class="reqs">
       <div><dt>System</dt><dd>Windows 10 or 11, 64-bit</dd></div>
-      <div><dt>Recordings</dt><dd>Saved to Documents → ScreenStudio Recordings</dd></div>
-      <div><dt>Licence</dt><dd>ISC · includes FFmpeg (GPL). <a href="https://github.com/jon-xvi/screenstudio/blob/main/THIRD-PARTY-NOTICES.md">Notices</a></dd></div>
+      <div><dt>Recordings</dt><dd>Saved to Documents → ViewBox Recordings</dd></div>
+      <div><dt>Licence</dt><dd>ISC · includes FFmpeg (GPL). <a href="https://github.com/jon-xvi/viewbox/blob/main/THIRD-PARTY-NOTICES.md">Notices</a></dd></div>
     </dl>
   </section>
 </main>
 
 <footer class="footer">
-  <span>© 2026 John · ScreenStudio</span>
-  <span><a href="https://github.com/jon-xvi/screenstudio">GitHub</a> · <a href="https://github.com/jon-xvi/screenstudio/issues">Report an issue</a> · <a href="https://github.com/jon-xvi/screenstudio/blob/main/LICENSE">Licence</a></span>
+  <span>© 2026 John · ViewBox</span>
+  <span><a href="https://github.com/jon-xvi/viewbox">GitHub</a> · <a href="https://github.com/jon-xvi/viewbox/issues">Report an issue</a> · <a href="https://github.com/jon-xvi/viewbox/blob/main/LICENSE">Licence</a></span>
 </footer>
 
 <script>
@@ -160,8 +160,8 @@
     try { localStorage.setItem('ss-theme', next); } catch (e) {}
   };
   // show the live version and size from the latest GitHub release (keeps the static text if offline or rate-limited)
-  fetch('https://api.github.com/repos/jon-xvi/screenstudio/releases/latest').then((r) => r.ok ? r.json() : Promise.reject()).then((rel) => {
-    const a = (rel.assets || []).find((x) => x.name === 'ScreenStudio-Setup.exe');
+  fetch('https://api.github.com/repos/jon-xvi/viewbox/releases/latest').then((r) => r.ok ? r.json() : Promise.reject()).then((rel) => {
+    const a = (rel.assets || []).find((x) => x.name === 'ViewBox-Setup.exe');
     if (!a) return;
     const mb = Math.round(a.size / 1048576);
     document.getElementById('dlMeta').textContent = `${rel.tag_name} · Windows 10 / 11 · 64-bit · ${mb} MB`;
